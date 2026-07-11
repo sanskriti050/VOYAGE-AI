@@ -180,6 +180,9 @@ def trip_type_context(trip_type: str) -> str:
 @app.get("/")
 def home():
     return {"message": "VoyageAI AI Engine Running 🚀"}
+@app.get("/test")
+def test():
+    return {"status": "working"}
 
 
 @app.post("/generate-trip")
