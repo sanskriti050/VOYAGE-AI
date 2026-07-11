@@ -243,10 +243,12 @@ function TripPlanner() {
     };
 
     try {
-      const response = await fetch("/api/generate-trip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const response = await fetch("https://voyage-ai-op3g.onrender.com/generate-trip", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
       });
 
       if (!response.ok) {

@@ -9,7 +9,7 @@ function TripForm() {
     e.preventDefault();
     setLoading(true);
 
-    const res = await fetch("http://127.0.0.1:8000/generate-trip", {
+    const res = await fetch("https://voyage-ai-cp93.onrender.com/generate-trip", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
