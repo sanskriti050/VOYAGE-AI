@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://voyage-ai-2.onrender.com/$1"
+    }
+  ]
+}
