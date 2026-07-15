@@ -193,7 +193,9 @@ function getAvailableModes(source, destination) {
   };
 }
 
-/* ── Main Component ── */
+// ── Backend URL ──────────────────────────────────────────────────
+const BACKEND_URL = "https://voyage-ai-2.onrender.com";
+
 function TripPlanner() {
   const [trip, setTrip] = useState({
     source_city: "",
@@ -208,6 +210,15 @@ function TripPlanner() {
   const [result,  setResult]  = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
+  const [waking,  setWaking]  = useState(false);
+
+  // Wake up Render backend on mount (free tier sleeps after inactivity)
+  useEffect(() => {
+    setWaking(true);
+    fetch(`${BACKEND_URL}/`)
+      .catch(() => {})
+      .finally(() => setWaking(false));
+  }, []);
 
   // Compute available modes whenever source/dest changes
   const modes = useMemo(
@@ -243,12 +254,10 @@ function TripPlanner() {
     };
 
     try {
-      const response = await fetch("https://voyage-ai-op3g.onrender.com/generate-trip", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+      const response = await fetch(`${BACKEND_URL}/generate-trip`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -267,8 +276,8 @@ function TripPlanner() {
 
     } catch (err) {
       console.error(err);
-      if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-        setError("Cannot connect to backend. Run: python -m uvicorn main:app --reload  in the backend folder.");
+      if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError") || err.message.includes("fetch")) {
+        setError("Cannot connect to backend. The server may be waking up — please wait 30 seconds and try again.");
       } else if (err.message === "API_KEY_INVALID") {
         setError("Invalid Gemini API key. Get one free at https://aistudio.google.com/apikey");
       } else if (err.message === "QUOTA_EXHAUSTED") {
@@ -304,6 +313,12 @@ function TripPlanner() {
       <div className="planner-container">
         <h2>✨ AI Travel Planner</h2>
         <p className="subtitle">Fill in your details and get a complete personalised trip plan instantly</p>
+
+        {waking && (
+          <div className="waking-banner">
+            ⏳ Waking up the server... first load may take 30–60 seconds on free hosting.
+          </div>
+        )}
 
         <RecentTrips onLoad={loadRecent} />
 
