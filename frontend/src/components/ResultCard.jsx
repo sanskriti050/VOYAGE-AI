@@ -10,14 +10,25 @@ function extractSection(text, heading) {
 }
 
 function parseDays(itineraryText) {
-  const dayBlocks = itineraryText.split(/### Day \d+/);
-  const dayTitles = [...itineraryText.matchAll(/### Day (\d+)[:\s]*(.*)/g)];
-  return dayTitles.map((match, i) => {
-    const block     = dayBlocks[i + 1] || "";
-    const morning   = block.match(/\*\*Morning:\*\*\s*([\s\S]*?)(?=\*\*Afternoon|\*\*Evening|$)/i)?.[1]?.trim() || "";
-    const afternoon = block.match(/\*\*Afternoon:\*\*\s*([\s\S]*?)(?=\*\*Evening|$)/i)?.[1]?.trim() || "";
-    const evening   = block.match(/\*\*Evening:\*\*\s*([\s\S]*?)$/i)?.[1]?.trim() || "";
-    return { dayNum: match[1], title: match[2].trim(), morning, afternoon, evening };
+  // AI output can use ### Day 1, Day 1:, **Day 1**, or Day 1 - Title.
+  // Parse all of these formats rather than relying on one exact Markdown style.
+  const dayPattern = /(?:^|\n)\s*(?:#{1,4}\s*)?(?:\*{0,2}\s*)?Day\s*(\d+)\s*(?:\*{0,2})?\s*(?::|-|–|—)?\s*([^\n]*)\n([\s\S]*?)(?=(?:\n\s*(?:#{1,4}\s*)?(?:\*{0,2}\s*)?Day\s*\d+)|$)/gi;
+  const clean = (value = "") => value.replace(/^[-*\s]+|[-*\s]+$/g, "").replace(/\*\*/g, "").trim();
+  const readSlot = (block, name, nextNames) => {
+    const next = nextNames.join("|");
+    const slot = new RegExp(`(?:^|\\n)\\s*(?:[-*]\\s*)?(?:\\*{0,2})?${name}\\s*(?:\\*{0,2})?\\s*:\\s*([\\s\\S]*?)(?=\\n\\s*(?:[-*]\\s*)?(?:\\*{0,2})?(?:${next})\\s*(?:\\*{0,2})?\\s*:|$)`, "i");
+    return clean(block.match(slot)?.[1]);
+  };
+
+  return [...itineraryText.matchAll(dayPattern)].map((match) => {
+    const block = match[3] || "";
+    return {
+      dayNum: match[1],
+      title: clean(match[2]) || `Discover ${match[1]}`,
+      morning: readSlot(block, "Morning", ["Afternoon", "Evening"]),
+      afternoon: readSlot(block, "Afternoon", ["Evening"]),
+      evening: readSlot(block, "Evening", []),
+    };
   });
 }
 
@@ -148,7 +159,7 @@ function TripScoreCard({ scores }) {
 /* ─── Main ResultCard ──────────────────────────────────── */
 
 function ResultCard({ result }) {
-  const [activeTab, setActiveTab] = useState("itinerary");
+  const [activeTab, setActiveTab] = useState("overview");
   const [checkedItems, setCheckedItems] = useState({});
   const printRef = useRef(null);
 
@@ -238,20 +249,30 @@ function ResultCard({ result }) {
       </div>
 
       {/* ── TABS ── */}
-      <div className="result-tabs no-print">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={`tab-btn ${activeTab === tab.id ? "active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {activeTab !== "overview" && <div className="feature-page-nav no-print"><button onClick={() => setActiveTab("overview")}>Back to all features</button></div>}
 
       {/* ── CONTENT ── */}
       <div className="tab-content">
+
+        {activeTab === "overview" && (
+          <div className="feature-dashboard no-print">
+            <div className="feature-dashboard-heading">
+              <p>YOUR COMPLETE TRIP</p>
+              <h3>Explore your travel dashboard</h3>
+              <span>Open any section whenever you need it.</span>
+            </div>
+            <div className="feature-dashboard-grid">
+              {tabs.map((tab, index) => (
+                <button className="feature-dashboard-card" key={tab.id} onClick={() => setActiveTab(tab.id)}>
+                  <span className="feature-number">{String(index + 1).padStart(2, "0")}</span>
+                  <strong>{tab.label}</strong>
+                  <small>Open this part of your personalised trip plan.</small>
+                  <b>Open section →</b>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ITINERARY */}
         {activeTab === "itinerary" && (

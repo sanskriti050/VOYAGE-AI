@@ -1,49 +1,25 @@
 function Features() {
   const features = [
-    {
-      icon: "🗓️",
-      title: "Day-wise Itinerary",
-      desc: "Get a detailed plan for each day — morning, afternoon, and evening activities tailored to your destination.",
-    },
-    {
-      icon: "🏨",
-      title: "Hotel Recommendations",
-      desc: "Curated hotel suggestions that fit your budget, from budget stays to premium properties.",
-    },
-    {
-      icon: "🍛",
-      title: "Local Food Guide",
-      desc: "Discover must-try local dishes and top restaurants at your travel destination.",
-    },
-    {
-      icon: "📸",
-      title: "Top Places to Visit",
-      desc: "Never miss a highlight — AI finds the best spots, monuments, nature trails, and hidden gems.",
-    },
-    {
-      icon: "💰",
-      title: "Budget Breakdown",
-      desc: "Smart cost estimation across hotels, food, transport, and activities so you never overspend.",
-    },
-    {
-      icon: "💡",
-      title: "Travel Tips",
-      desc: "Expert tips on the best time to visit, local customs, what to pack, and how to get around.",
-    },
+    { icon: "01", title: "Day-wise itinerary", desc: "A considered plan for every morning, afternoon and evening." },
+    { icon: "02", title: "Stay & dining picks", desc: "Thoughtful hotel and local food recommendations for your budget." },
+    { icon: "03", title: "Places worth your time", desc: "Highlights, hidden gems and experiences shaped around your pace." },
+    { icon: "04", title: "Clear budget view", desc: "A practical breakdown across stays, food, transport and activities." },
   ];
 
   return (
-    <section className="features-section">
-      <h2 className="features-title">Everything You Need for the Perfect Trip</h2>
-      <p className="features-subtitle">VoyageAI handles all the planning so you can focus on enjoying.</p>
+    <section className="features-section" id="features">
+      <div className="section-intro">
+        <p className="hero-eyebrow">YOUR TRIP, IN ONE PLACE</p>
+        <h2 className="features-title">A travel dashboard that feels personal.</h2>
+        <p className="features-subtitle">Every important detail is shaped into one clear, considered itinerary.</p>
+      </div>
       <div className="features-grid">
-        {features.map((f, i) => (
-          <div className="feature-card" key={i}>
-            <div className="feature-icon">{f.icon}</div>
-            <h3>{f.title}</h3>
-            <p>{f.desc}</p>
-          </div>
-        ))}
+        {features.map((feature) => <article className="feature-card" key={feature.icon}><div className="feature-icon">{feature.icon}</div><h3>{feature.title}</h3><p>{feature.desc}</p><span className="feature-arrow">Explore →</span></article>)}
+      </div>
+      <div className="inspiration-row">
+        <div className="inspiration-copy"><p className="hero-eyebrow">CURATED INSPIRATION</p><h3>Find a place that feels like a story worth living.</h3><p>Choose a mood, set the pace, and let VoyageAI take care of the details.</p></div>
+        <article className="destination-card destination-card-large beach-card"><div className="beach-art"><span /><span /><span /></div><div><span>COASTAL RESET</span><strong>Sun, salt & slow mornings</strong></div></article>
+        <article className="destination-card city-card"><div className="city-art"><span /><span /><span /></div><div><span>CITY WANDER</span><strong>Beautiful corners, at your pace</strong></div></article>
       </div>
     </section>
   );
