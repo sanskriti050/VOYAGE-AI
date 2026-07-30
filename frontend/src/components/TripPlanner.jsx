@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import "./TripPlanner.css";
 import ResultCard from "./ResultCard";
+import { generateTrip } from "../services/api";
 
 /* ── Travel facts ── */
 const TRAVEL_FACTS = [
@@ -193,9 +194,7 @@ function getAvailableModes(source, destination) {
   };
 }
 
-// ── Backend URL ──────────────────────────────────────────────────
-const BACKEND_URL = "https://voyage-ai-2.onrender.com";
-
+/* ── Main Component ── */
 function TripPlanner() {
   const [trip, setTrip] = useState({
     source_city: "",
@@ -210,15 +209,6 @@ function TripPlanner() {
   const [result,  setResult]  = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
-  const [waking,  setWaking]  = useState(false);
-
-  // Wake up Render backend on mount (free tier sleeps after inactivity)
-  useEffect(() => {
-    setWaking(true);
-    fetch(`${BACKEND_URL}/`)
-      .catch(() => {})
-      .finally(() => setWaking(false));
-  }, []);
 
   // Compute available modes whenever source/dest changes
   const modes = useMemo(
@@ -254,30 +244,17 @@ function TripPlanner() {
     };
 
     try {
-      const response = await fetch(`${BACKEND_URL}/generate-trip`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        const detail  = errData.detail || "";
-        if (detail.includes("UNAUTHENTICATED") || detail.includes("API key"))  throw new Error("API_KEY_INVALID");
-        if (detail.includes("quota exhausted")  || detail.includes("RESOURCE_EXHAUSTED")) throw new Error("QUOTA_EXHAUSTED");
-        if (detail.includes("503") || detail.includes("UNAVAILABLE") || detail.includes("high demand")) throw new Error("SERVER_BUSY");
-        throw new Error(`SERVER_${response.status}: ${detail.slice(0, 150)}`);
-      }
-
-      const data = await response.json();
+      // Use the configured /api route instead of the retired direct backend URL.
+      // Vite and Vercel both forward this route to the active FastAPI service.
+      const data = await generateTrip(payload);
       setResult(data);
       saveToRecent(payload);
       setTimeout(() => document.getElementById("trip-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
     } catch (err) {
       console.error(err);
-      if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError") || err.message.includes("fetch")) {
-        setError("Cannot connect to backend. The server may be waking up — please wait 30 seconds and try again.");
+      if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
+        setError("Cannot connect to backend. Run: python -m uvicorn main:app --reload  in the backend folder.");
       } else if (err.message === "API_KEY_INVALID") {
         setError("Invalid Gemini API key. Get one free at https://aistudio.google.com/apikey");
       } else if (err.message === "QUOTA_EXHAUSTED") {
@@ -313,12 +290,6 @@ function TripPlanner() {
       <div className="planner-container">
         <h2>✨ AI Travel Planner</h2>
         <p className="subtitle">Fill in your details and get a complete personalised trip plan instantly</p>
-
-        {waking && (
-          <div className="waking-banner">
-            ⏳ Waking up the server... first load may take 30–60 seconds on free hosting.
-          </div>
-        )}
 
         <RecentTrips onLoad={loadRecent} />
 

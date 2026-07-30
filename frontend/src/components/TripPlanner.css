@@ -2,7 +2,8 @@
 .planner-section {
   width: 100%;
   padding: 80px 20px;
-  background: #eef2e9;
+  /* Matches the soft warm off-white used in the section above. */
+  background: #fbf8f5;
 }
 
 .planner-container {
@@ -11,7 +12,7 @@
   background: white;
   padding: 42px;
   border-radius: 22px;
-  box-shadow: 0px 8px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: 0px 8px 28px rgba(92, 62, 40, 0.12);
 }
 
 .planner-container h2 {
@@ -164,18 +165,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* ===== WAKING BANNER ===== */
-.waking-banner {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 10px;
-  padding: 10px 16px;
-  font-size: 13.5px;
-  color: #0369a1;
-  margin-bottom: 18px;
-  text-align: center;
-}
-
 /* ===== RECENT TRIPS ===== */
 .recent-trips {
   margin-bottom: 24px;
@@ -265,11 +254,58 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
+
+/* ===== WARM GREEN AI PLANNER PALETTE =====
+   Keeps all form interactions in one solid, warm-green family. */
+.planner-container h2 { color: #557a4a; }
+
+.planner-container input:focus,
+.planner-container select:focus {
+  border-color: #557a4a;
+  box-shadow: 0 0 0 3px rgba(85, 122, 74, 0.14);
+}
+
+.route-display {
+  background: #f4f7ef;
+  border-color: #a8bf8f;
+}
+.route-from { color: #456b3e; }
+.route-arrow { color: #78965f; }
+.route-to { color: #557a4a; }
+
+.recent-trips { background: #f4f7ef; border-color: #c7d8b5; }
+.recent-trips h4 { color: #456b3e; }
+.recent-chip { border-color: #c7d8b5; color: #456b3e; }
+.recent-chip:hover { background: #557a4a; border-color: #557a4a; }
+.recent-chip:hover span { color: #edf4e7; }
+
+.trip-type-btn:hover,
+.travel-mode-btn:hover:not(.disabled) {
+  border-color: #a8bf8f;
+  background: #f4f7ef;
+  color: #456b3e;
+}
+.trip-type-btn.selected,
+.travel-mode-btn.selected {
+  border-color: #557a4a;
+  background: #edf4e7;
+  color: #456b3e;
+  box-shadow: 0 0 0 3px rgba(85, 122, 74, 0.16);
+}
+
+.generate-btn {
+  background: #557a4a;
+}
+.generate-btn:hover:not(:disabled) {
+  background: #456b3e;
+  box-shadow: 0 6px 20px rgba(85, 122, 74, 0.34);
+}
+
 /* ===== LOADING SCREEN ===== */
 .loading-screen {
   margin-top: 30px;
   padding: 40px 30px;
-  background: linear-gradient(135deg, #3d4d3a, #66795d);
+  background: linear-gradient(135deg, #0f172a, #1e3a5f);
   border-radius: 18px;
   text-align: center;
   color: white;
@@ -506,7 +542,8 @@
 
 /* ===== RESULT HEADER ===== */
 .result-header {
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  /* Solid warm green: no blue gradient or glass/blur effect. */
+  background: #557a4a;
   padding: 28px 32px 22px;
   color: white;
 }
@@ -630,40 +667,92 @@
 .suggest-comfortable { background: #d1fae5; color: #065f46; }
 .suggest-rate        { background: #ede9fe; color: #5b21b6; font-family: monospace; }
 
-/* ===== TABS ===== */
-.result-tabs {
-  display: flex;
-  overflow-x: auto;
-  background: white;
-  border-bottom: 2px solid #e5e7eb;
-  padding: 0 12px;
-  gap: 2px;
-  margin-top: 16px;
-  scrollbar-width: none;
+/* ===== WARM FEATURE NAVIGATION — VISUAL ONLY ===== */
+/* Functionality and feature content are unchanged. */
+.result-card > .result-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 16px;
+  margin: 16px 0 0;
+  overflow: visible;
+  background: #fff8f1;
+  border-top: 1px solid #f4dfca;
+  border-bottom: 1px solid #f4dfca;
+  scrollbar-width: auto;
 }
 
 .result-tabs::-webkit-scrollbar { display: none; }
 
-.tab-btn {
-  padding: 13px 16px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  font-size: 13.5px;
-  font-weight: 500;
+.result-card > .result-tabs .tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 10px;
+  margin: 0;
+  border: 1px solid #edd7c0;
+  border-radius: 10px;
+  background: #fffdf9;
+  color: #704c35;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: normal;
   cursor: pointer;
-  border-bottom: 3px solid transparent;
-  transition: 0.2s;
-  white-space: nowrap;
-  margin-bottom: -2px;
+  box-shadow: 0 2px 5px rgba(127, 71, 34, 0.07);
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.tab-btn:hover { color: #2563eb; }
+.result-card > .result-tabs .tab-btn:hover {
+  color: #a34819;
+  background: #fff1e3;
+  border-color: #e9ad7f;
+  box-shadow: 0 5px 12px rgba(172, 81, 27, 0.12);
+  transform: translateY(-1px);
+}
 
-.tab-btn.active {
-  color: #2563eb;
-  border-bottom: 3px solid #2563eb;
-  font-weight: 700;
+.result-card > .result-tabs .tab-btn.active {
+  color: #ffffff;
+  border-color: #c75a25;
+  background: linear-gradient(135deg, #d66b32, #b94a1f);
+  box-shadow: 0 5px 12px rgba(174, 71, 25, 0.22);
+  font-weight: 750;
+}
+
+@media (max-width: 700px) {
+  .result-card > .result-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 420px) {
+  .result-card > .result-tabs { grid-template-columns: 1fr; }
+}
+
+/* Keep compact nested tabs, if present, separate from the feature navigation. */
+.tab-content .result-tabs {
+  display: flex;
+  overflow-x: auto;
+  gap: 6px;
+  padding: 0 0 4px;
+  scrollbar-width: none;
+}
+
+.tab-content .tab-btn {
+  padding: 9px 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab-content .tab-btn.active {
+  color: #1d4ed8;
+  border-color: #93c5fd;
+  background: #eff6ff;
 }
 
 /* ===== TAB CONTENT ===== */
@@ -965,22 +1054,6 @@
 /* ===== PRINT STYLES ===== */
 .print-only { display: none; }
 
-/* ===== WARM SAGE THEME ===== */
-.planner-section { background: #eef2e9; }
-.planner-container { box-shadow: 0 14px 40px rgba(47, 60, 43, .12); }
-.planner-container h2 { color: #6d482f; }
-.planner-container input:focus, .planner-container select:focus { border-color: #839d77; box-shadow: 0 0 0 3px rgba(131, 157, 119, .18); }
-.route-display { background: linear-gradient(135deg, #f1f5ed, #e4ecdc); border-color: #a9bd9d; }
-.route-from { color: #62412b; }.route-arrow { color: #829b75; }.route-to { color: #52724b; }
-.generate-btn { background: linear-gradient(135deg, #6d482f, #896347); }.generate-btn:hover:not(:disabled) { box-shadow: 0 8px 20px rgba(87, 57, 37, .28); }
-.waking-banner, .recent-trips { background: #f1f5ed; border-color: #d4e0cd; color: #52724b; }
-.recent-trips h4, .recent-chip { color: #52724b; }.recent-chip { border-color: #cbdac3; }.recent-chip:hover { background: #52724b; border-color: #52724b; }
-.trip-type-btn:hover, .travel-mode-btn:hover:not(.disabled) { border-color: #a9bd9d; background: #f1f5ed; color: #52724b; }
-.trip-type-btn.selected, .travel-mode-btn.selected { border-color: #78916d; background: linear-gradient(135deg, #f2f6ee, #deead6); color: #456640; box-shadow: 0 0 0 3px rgba(120, 145, 109, .16); }
-.loading-screen { background: linear-gradient(135deg, #3d4d3a, #66795d); }.loading-bar-fill { background: linear-gradient(90deg, #c5d7b9, #8fad7f); }
-.result-header { background: linear-gradient(135deg, #4b6045, #718668); }.tab-btn:hover, .tab-btn.active { color: #58754f; }.tab-btn.active { border-bottom-color: #58754f; }
-.day-badge { background: #6d482f; }.budget-total { background: #edf3e8; }.budget-value { color: #6d482f; }.packing-card { border-top-color: #78916d; }.packing-cat-title { color: #58754f; }.tips-list li { border-left-color: #8da77f; }
-
 @media print {
   .no-print { display: none !important; }
   .print-only { display: block !important; }
@@ -990,7 +1063,7 @@
   .result-tabs { display: none !important; }
   .tab-content { display: none !important; }
   .banner-wrapper { padding: 10px 0 0 !important; }
-  .result-header { background: #1e40af !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .result-header { background: #557a4a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .print-section { margin-bottom: 24px; page-break-inside: avoid; }
   .print-section h2 { font-size: 16px; color: #1e40af; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; margin-bottom: 10px; }
 }
@@ -1028,10 +1101,284 @@
   .hero-content h1 { font-size: 30px; }
 }
 
-/* Final contrast pass for sage planner surfaces */
-.planner-section { background: #eef2e9; }.planner-container h2, .section-title, .score-card-header h3, .day-title, .info-card h4, .packing-cat-title { color: #5a3a23; }.subtitle, .label-hint, .score-card-header p, .section-meta, .score-dim-reason, .info-card p, .time-slot p, .tips-list li { color: #67594c; }.form-group label, .score-dim-name, .budget-label, .emergency-label { color: #4d3728; }.planner-container input, .planner-container select, .trip-type-btn, .travel-mode-btn { color: #493629; }
+/* Keep Mode of Travel selection warm green (placed last to override its original blue style). */
+.travel-mode-btn:hover:not(.disabled) {
+  border-color: #a8bf8f;
+  background: #f4f7ef;
+  color: #456b3e;
+}
+.travel-mode-btn.selected {
+  border-color: #557a4a;
+  background: #edf4e7;
+  color: #456b3e;
+  box-shadow: 0 0 0 3px rgba(85, 122, 74, 0.16);
+}
 
-/* Result feature dashboard */
-.feature-page-nav { display:flex; padding:16px 28px 0; background:#f9faf6; }.feature-page-nav button { padding:9px 14px; border:1px solid #c9d8c0; border-radius:7px; color:#604129; background:#fff; font-size:13px; font-weight:700; cursor:pointer; }.feature-page-nav button:hover { background:#edf3e8; }
-.feature-dashboard { padding:8px 4px 14px; }.feature-dashboard-heading { margin:0 0 26px; }.feature-dashboard-heading p { margin:0 0 8px; color:#7b6045; font-size:11px; font-weight:800; letter-spacing:.14em; }.feature-dashboard-heading h3 { margin:0 0 8px; color:#563a26; font-family:Georgia,serif; font-size:28px; }.feature-dashboard-heading span { color:#746658; font-size:14px; }.feature-dashboard-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; }.feature-dashboard-card { min-height:172px; display:flex; flex-direction:column; align-items:flex-start; padding:20px; border:1px solid #d9e3d2; border-radius:12px; color:#573b27; background:#fff; text-align:left; cursor:pointer; transition:.2s ease; }.feature-dashboard-card:hover { transform:translateY(-3px); border-color:#9daf92; box-shadow:0 12px 24px rgba(57,74,51,.1); }.feature-number { margin-bottom:auto; color:#8a674a; font-family:Georgia,serif; font-size:14px; }.feature-dashboard-card strong { margin:18px 0 7px; font-family:Georgia,serif; font-size:19px; }.feature-dashboard-card small { min-height:34px; color:#716456; font-size:12.5px; line-height:1.4; }.feature-dashboard-card b { margin-top:14px; color:#65805c; font-size:12px; }
-@media (max-width:700px) { .feature-dashboard-grid { grid-template-columns:repeat(2,1fr); } } @media (max-width:480px) { .feature-dashboard-grid { grid-template-columns:1fr; }.feature-page-nav { padding-left:14px; }.feature-dashboard-card { min-height:150px; } }
+/* Warm green loading panel. */
+.loading-screen {
+  background: linear-gradient(135deg, #456b3e 0%, #6f915e 100%);
+  color: #fffdf7;
+}
+.loading-screen h3 { color: #fffdf7; }
+.loading-bar-wrap { background: rgba(255, 253, 247, 0.30); }
+.loading-bar { background: #dceacb; }
+.loading-fact { color: #fff8e8; }
+.loading-powered { color: #edf4e7; }
+
+/* Premium travel-dashboard feature navigation — styling only. */
+.result-card > .result-tabs {
+  gap: 12px;
+  padding: 20px;
+  margin-top: 16px;
+  background: linear-gradient(180deg, #fffaf4 0%, #f7eee2 100%);
+  border-top: 1px solid #ecd9c3;
+  border-bottom: 1px solid #ecd9c3;
+}
+.result-card > .result-tabs .tab-btn {
+  position: relative;
+  justify-content: flex-start;
+  min-height: 62px;
+  padding: 14px 16px;
+  overflow: hidden;
+  border: 1px solid #e8d7c1;
+  border-radius: 15px;
+  background: #fffdfa;
+  color: #49613f;
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: 0.1px;
+  box-shadow: 0 3px 8px rgba(91, 69, 39, 0.08);
+}
+.result-card > .result-tabs .tab-btn::after {
+  content: "";
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  right: -17px;
+  bottom: -22px;
+  border-radius: 50%;
+  background: #e9f0df;
+  opacity: 0.8;
+  transition: transform 0.25s ease;
+}
+.result-card > .result-tabs .tab-btn:nth-child(2n)::after { background: #f9e6ce; }
+.result-card > .result-tabs .tab-btn:nth-child(3n)::after { background: #f4decf; }
+.result-card > .result-tabs .tab-btn:hover {
+  color: #315b36;
+  border-color: #91ad79;
+  background: #f7fbf1;
+  box-shadow: 0 8px 18px rgba(70, 100, 59, 0.15);
+  transform: translateY(-3px);
+}
+.result-card > .result-tabs .tab-btn:hover::after { transform: scale(1.6); }
+.result-card > .result-tabs .tab-btn.active {
+  color: #fffdf6;
+  border-color: #456b3e;
+  background: linear-gradient(135deg, #355f3d 0%, #638357 100%);
+  box-shadow: 0 9px 19px rgba(53, 95, 61, 0.30);
+}
+.result-card > .result-tabs .tab-btn.active::after {
+  background: rgba(255, 244, 215, 0.20);
+  transform: scale(1.6);
+}
+@media (max-width: 700px) {
+  .result-card > .result-tabs { gap: 9px; padding: 14px; }
+  .result-card > .result-tabs .tab-btn { min-height: 56px; padding: 12px; font-size: 13px; }
+}
+
+/* Travel-journal result styling — presentation only; all plan data and actions stay unchanged. */
+.tab-content {
+  background: linear-gradient(180deg, #fffaf4 0%, #f8f1e7 100%);
+}
+.section-header-row {
+  padding: 0 2px 6px;
+  border-bottom: 1px solid #e6d7c2;
+}
+.section-title { color: #315b36; letter-spacing: 0.15px; }
+.section-meta { color: #8a7763; font-weight: 600; }
+
+.day-card, .info-card, .packing-card, .budget-list, .emergency-list, .raw-text {
+  border: 1px solid #eadbc8;
+  background: #fffdfa;
+  box-shadow: 0 7px 18px rgba(82, 65, 43, 0.08);
+}
+.day-card {
+  position: relative;
+  overflow: hidden;
+  padding: 21px 22px;
+}
+.day-card::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  background: linear-gradient(#6a8b58, #b0c498);
+}
+.day-badge {
+  background: #496f42;
+  box-shadow: 0 3px 8px rgba(61, 98, 55, 0.20);
+}
+.day-title { color: #315b36; }
+.time-slot { padding: 8px 0 8px 13px; border-left: 2px solid #e3d1b8; }
+.time-label { margin-bottom: 7px; }
+.morning-label { background: #f7e7a8; color: #745513; }
+.afternoon-label { background: #f6d9b1; color: #8b501b; }
+.evening-label { background: #dae7cf; color: #365d38; }
+.time-slot p { color: #5e5144; }
+
+.info-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 188px;
+  border-top: 4px solid #9cb783;
+}
+.info-card::after {
+  content: "";
+  position: absolute;
+  width: 82px; height: 82px;
+  right: -39px; bottom: -41px;
+  border-radius: 50%;
+  background: #edf3e5;
+  z-index: 0;
+}
+.info-card > * { position: relative; z-index: 1; }
+.info-card:hover { transform: translateY(-5px); box-shadow: 0 13px 25px rgba(65, 92, 54, 0.16); }
+.card-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; margin-bottom: 12px; border-radius: 12px; background: #eff5e8; font-size: 22px; }
+.info-card h4 { color: #315b36; font-size: 15px; }
+.info-card p { color: #675b50; font-size: 13.5px; line-height: 1.6; }
+.hotel-card { border-top-color: #8d9b69; }
+.food-card { border-top-color: #db9723; }
+.place-card { border-top-color: #638b61; }
+.food-card .card-icon { background: #fff0d6; }
+.hotel-card .card-icon { background: #eef1e2; }
+.place-card .card-icon { background: #e3f0df; }
+
+.budget-row, .emergency-row { border-bottom-color: #ede1d1; }
+.budget-row:hover:not(.budget-total) { background: #f5f8ef; }
+.budget-total { background: #e8f0df; color: #315b36; }
+.budget-value { color: #496f42; }
+.packing-card { border-top: 4px solid #9cb783; }
+.packing-cat-title { color: #315b36; }
+.packing-items li:hover { background: #eff5e9; }
+.emergency-value { color: #b94e3b; }
+.emergency-note { background: #fff2e4; border-color: #f0c995; color: #82532c; }
+.tips-list li { background: #fffdfa; border: 1px solid #eadbc8; border-left: 5px solid #789569; box-shadow: 0 4px 10px rgba(82, 65, 43, 0.06); color: #594e44; }
+.tips-list li:hover { background: #f5f8ef; }
+
+/* The compact Food-only sub-navigation follows the same palette. */
+.tab-content .tab-btn { border-color: #d7c6b1; color: #5c7055; background: #fffdfa; }
+.tab-content .tab-btn.active { color: #315b36; border-color: #789569; background: #e9f1df; }
+@media (max-width: 700px) {
+  .info-card { min-height: auto; }
+  .day-card { padding: 18px; }
+}
+
+/* Vibrant travel experience layer — visual enhancements only. */
+.planner-container {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 7% 5%, rgba(205, 137, 57, .14), transparent 25%),
+    radial-gradient(circle at 94% 17%, rgba(92, 132, 79, .17), transparent 26%),
+    #f9f3e9;
+}
+.planner-container::before,
+.planner-container::after {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  font-family: Georgia, serif;
+  color: rgba(57, 102, 55, .10);
+  line-height: 1;
+}
+.planner-container::before { content: "✦"; top: 58px; left: 8%; font-size: 62px; animation: travelFloat 5s ease-in-out infinite; }
+.planner-container::after { content: "✈"; right: 7%; bottom: 9%; font-size: 58px; transform: rotate(-15deg); animation: travelFloat 6s ease-in-out infinite reverse; }
+.planner-container > * { position: relative; z-index: 1; }
+
+.planner-card {
+  border: 1px solid #ead9c4;
+  box-shadow: 0 19px 45px rgba(81, 63, 38, .13), 0 3px 9px rgba(65, 97, 53, .07);
+}
+.planner-header { position: relative; padding-bottom: 18px; }
+.planner-header::after {
+  content: "";
+  display: block;
+  width: 95px; height: 4px;
+  margin: 13px auto 0;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #c98231, #587a4b, #c98231);
+  background-size: 200% 100%;
+  animation: routeGlow 3.8s ease-in-out infinite;
+}
+.planner-header h2 { color: #315f3b; text-shadow: 0 1px 0 #fff; }
+.planner-header h2::first-letter { color: #c87926; }
+
+.recent-plans {
+  background: linear-gradient(100deg, #f5ecdc, #fbf7ef 48%, #eef4e8);
+  border: 1px solid #d9c9ae;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+.recent-plan-chip {
+  border-color: #d9c6a8;
+  box-shadow: 0 3px 7px rgba(80, 69, 48, .08);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.recent-plan-chip:hover { transform: translateY(-3px) rotate(-1deg); border-color: #809e70; box-shadow: 0 8px 15px rgba(63, 93, 54, .16); }
+
+.form-group input, .form-group select {
+  border-color: #ded1c1;
+  background: #fffcf8;
+  transition: border-color .22s ease, box-shadow .22s ease, transform .22s ease, background .22s ease;
+}
+.form-group input:hover, .form-group select:hover { border-color: #a8bc95; background: #fffefa; }
+.form-group input:focus, .form-group select:focus { border-color: #5c834d; box-shadow: 0 0 0 4px rgba(101, 141, 82, .16), 0 6px 13px rgba(60, 91, 48, .08); }
+
+.route-preview {
+  position: relative;
+  overflow: hidden;
+  border-color: #b9c9a9;
+  background: linear-gradient(90deg, #f8f1e5, #f4f9ed, #f8f1e5);
+  background-size: 200% 100%;
+  animation: routeGlow 6s ease-in-out infinite;
+}
+.route-arrow { color: #bd7a29; animation: planeSway 2s ease-in-out infinite; }
+.route-dot { background: #5d854f; box-shadow: 0 0 0 4px rgba(93, 133, 79, .13); }
+
+.trip-option, .travel-mode-option {
+  position: relative;
+  overflow: hidden;
+  border-color: #ded1c1;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+}
+.trip-option:hover, .travel-mode-option:hover { transform: translateY(-3px); border-color: #8ca67d; box-shadow: 0 7px 14px rgba(59, 91, 49, .12); }
+.trip-option.selected, .travel-mode-option.selected {
+  background: linear-gradient(135deg, #edf5e7, #f8f3e4);
+  box-shadow: 0 0 0 2px #608451, 0 7px 16px rgba(59, 91, 49, .16);
+}
+
+.generate-btn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(110deg, #315f3b 0%, #4f7c49 44%, #a56b2d 100%);
+  background-size: 180% 100%;
+  box-shadow: 0 10px 20px rgba(49, 95, 59, .24);
+  animation: buttonShine 5s ease-in-out infinite;
+}
+.generate-btn::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; width: 34px; left: -50px;
+  transform: skewX(-24deg);
+  background: rgba(255,255,255,.28);
+  animation: buttonSweep 4.5s ease-in-out infinite;
+}
+.generate-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 25px rgba(49, 95, 59, .30); }
+
+@keyframes travelFloat { 0%,100% { translate: 0 0; } 50% { translate: 0 -12px; } }
+@keyframes routeGlow { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes planeSway { 0%,100% { transform: translateX(0) rotate(-4deg); } 50% { transform: translateX(6px) rotate(4deg); } }
+@keyframes buttonShine { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes buttonSweep { 0%, 55% { left: -50px; } 75%,100% { left: 110%; } }
+@media (prefers-reduced-motion: reduce) {
+  .planner-container::before, .planner-container::after, .planner-header::after, .route-preview, .route-arrow, .generate-btn, .generate-btn::after { animation: none; }
+}

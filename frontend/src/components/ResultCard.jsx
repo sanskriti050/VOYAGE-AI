@@ -3,43 +3,49 @@ import { useState, useRef } from "react";
 /* ─── helpers ──────────────────────────────────────────── */
 
 function extractSection(text, heading) {
-  const regex = new RegExp(`## ${heading}[\\s\\S]*?(?=## |$)`, "i");
+  const regex = new RegExp(`## ${heading}[\\s\\S]*?(?=\\n## (?!#)|$)`, "i");
   const match = text.match(regex);
   if (!match) return "";
   return match[0].replace(/^## .+\n/, "").trim();
 }
 
 function parseDays(itineraryText) {
-  // AI output can use ### Day 1, Day 1:, **Day 1**, or Day 1 - Title.
-  // Parse all of these formats rather than relying on one exact Markdown style.
-  const dayPattern = /(?:^|\n)\s*(?:#{1,4}\s*)?(?:\*{0,2}\s*)?Day\s*(\d+)\s*(?:\*{0,2})?\s*(?::|-|–|—)?\s*([^\n]*)\n([\s\S]*?)(?=(?:\n\s*(?:#{1,4}\s*)?(?:\*{0,2}\s*)?Day\s*\d+)|$)/gi;
-  const clean = (value = "") => value.replace(/^[-*\s]+|[-*\s]+$/g, "").replace(/\*\*/g, "").trim();
-  const readSlot = (block, name, nextNames) => {
-    const next = nextNames.join("|");
-    const slot = new RegExp(`(?:^|\\n)\\s*(?:[-*]\\s*)?(?:\\*{0,2})?${name}\\s*(?:\\*{0,2})?\\s*:\\s*([\\s\\S]*?)(?=\\n\\s*(?:[-*]\\s*)?(?:\\*{0,2})?(?:${next})\\s*(?:\\*{0,2})?\\s*:|$)`, "i");
-    return clean(block.match(slot)?.[1]);
-  };
-
-  return [...itineraryText.matchAll(dayPattern)].map((match) => {
-    const block = match[3] || "";
-    return {
-      dayNum: match[1],
-      title: clean(match[2]) || `Discover ${match[1]}`,
-      morning: readSlot(block, "Morning", ["Afternoon", "Evening"]),
-      afternoon: readSlot(block, "Afternoon", ["Evening"]),
-      evening: readSlot(block, "Evening", []),
-    };
+  const dayBlocks = itineraryText.split(/### Day \d+/);
+  const dayTitles = [...itineraryText.matchAll(/### Day (\d+)[:\s]*(.*)/g)];
+  return dayTitles.map((match, i) => {
+    const block     = dayBlocks[i + 1] || "";
+    const morning   = block.match(/\*\*Morning:\*\*\s*([\s\S]*?)(?=\*\*Afternoon|\*\*Evening|$)/i)?.[1]?.trim() || "";
+    const afternoon = block.match(/\*\*Afternoon:\*\*\s*([\s\S]*?)(?=\*\*Evening|$)/i)?.[1]?.trim() || "";
+    const evening   = block.match(/\*\*Evening:\*\*\s*([\s\S]*?)$/i)?.[1]?.trim() || "";
+    return { dayNum: match[1], title: match[2].trim(), morning, afternoon, evening };
   });
 }
 
 function parseBullets(text) {
   return text.split("\n")
-    .filter((l) => l.trim().startsWith("-"))
+    .filter((line) => /^\s*(?:[-*•]|\d+[.)])\s+/.test(line))
     .map((line) => {
-      const clean = line.replace(/^-\s*/, "");
-      const m = clean.match(/\*\*(.+?)\*\*\s*[-–]?\s*(.*)/);
-      return m ? { name: m[1], desc: m[2] } : { name: clean, desc: "" };
+      const clean = line.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "").trim();
+      const m = clean.match(/\*\*(.+?)\*\*\s*[-–:]?\s*(.*)/) || clean.match(/^(.+?)\s*[-–:]\s*(.+)$/);
+      return m ? { name: m[1].trim(), desc: m[2].trim() } : { name: clean, desc: "" };
     });
+}
+
+function parseFoodCategories(text) {
+  // Food must never read the rest of the plan. Only accept the dedicated
+  // Must-Try Foods section, ending at the next main Markdown section.
+  const categories = { cafes: [], restaurants: [], clubs: [], mustTry: [] };
+  const heading = /^(?:#{1,6}\s*)?(?:\*\*\s*)?(?:MUST[-\s]*TRY\s*(?:FOOD(?:S)?|DISH(?:ES)?)?|LOCAL\s+(?:FOOD(?:S)?|DISH(?:ES)?))(?:\s*\*\*)?\s*:?[\s]*$/im;
+  const match = heading.exec(text);
+  if (!match) return categories;
+
+  const afterHeading = text.slice(match.index + match[0].length);
+  // The AI plan uses ## for its main sections (Budget, Packing, Emergency,
+  // etc.). Stop before one so those items cannot appear under Food.
+  const nextSection = afterHeading.search(/\n#{1,2}\s+[^#]/);
+  const foodOnly = (nextSection === -1 ? afterHeading : afterHeading.slice(0, nextSection)).trim();
+  categories.mustTry = parseBullets(foodOnly).slice(0, 5);
+  return categories;
 }
 
 function parseBudgetAssessment(text) {
@@ -159,7 +165,8 @@ function TripScoreCard({ scores }) {
 /* ─── Main ResultCard ──────────────────────────────────── */
 
 function ResultCard({ result }) {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("itinerary");
+  const [activeFoodCategory, setActiveFoodCategory] = useState("mustTry");
   const [checkedItems, setCheckedItems] = useState({});
   const printRef = useRef(null);
 
@@ -172,7 +179,7 @@ function ResultCard({ result }) {
   const scoreText       = extractSection(plan, "TRIP SCORE");
   const itineraryText   = extractSection(plan, "DAY-WISE ITINERARY");
   const hotelsText      = extractSection(plan, "BEST HOTELS");
-  const foodText        = extractSection(plan, "MUST-TRY FOOD");
+  const foodGuideText   = extractSection(plan, "FOOD GUIDE") || extractSection(plan, "MUST-TRY FOOD");
   const placesText      = extractSection(plan, "PLACES TO VISIT");
   const budgetText      = extractSection(plan, "BUDGET BREAKDOWN");
   const packingText     = extractSection(plan, "PACKING LIST");
@@ -183,7 +190,9 @@ function ResultCard({ result }) {
   const scores        = parseTripScore(scoreText);
   const days          = parseDays(itineraryText);
   const hotels        = parseBullets(hotelsText);
-  const foods         = parseBullets(foodText);
+  // Parse the complete response as well: some AI replies use ## for category
+  // headings, which makes those headings a separate top-level section.
+  const foodCategories = parseFoodCategories(`${foodGuideText}\n${plan}`);
   const places        = parseBullets(placesText);
   const budgetLines   = parseBullets(budgetText);
   const packingCats   = parsePackingList(packingText);
@@ -249,30 +258,20 @@ function ResultCard({ result }) {
       </div>
 
       {/* ── TABS ── */}
-      {activeTab !== "overview" && <div className="feature-page-nav no-print"><button onClick={() => setActiveTab("overview")}>Back to all features</button></div>}
+      <div className="result-tabs no-print">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`tab-btn ${activeTab === tab.id ? "active" : ""}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {/* ── CONTENT ── */}
       <div className="tab-content">
-
-        {activeTab === "overview" && (
-          <div className="feature-dashboard no-print">
-            <div className="feature-dashboard-heading">
-              <p>YOUR COMPLETE TRIP</p>
-              <h3>Explore your travel dashboard</h3>
-              <span>Open any section whenever you need it.</span>
-            </div>
-            <div className="feature-dashboard-grid">
-              {tabs.map((tab, index) => (
-                <button className="feature-dashboard-card" key={tab.id} onClick={() => setActiveTab(tab.id)}>
-                  <span className="feature-number">{String(index + 1).padStart(2, "0")}</span>
-                  <strong>{tab.label}</strong>
-                  <small>Open this part of your personalised trip plan.</small>
-                  <b>Open section →</b>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ITINERARY */}
         {activeTab === "itinerary" && (
@@ -327,24 +326,43 @@ function ResultCard({ result }) {
           </div>
         )}
 
-        {/* FOOD */}
-        {activeTab === "food" && (
-          <div className="section-content">
-            <div className="section-header-row">
-              <h3 className="section-title">🍛 Must-Try Food</h3>
-              <span className="section-meta">local flavours of {result.destination}</span>
+        {/* FOOD GUIDE */}
+        {activeTab === "food" && (() => {
+          const foodOptions = [
+            { id: "mustTry", label: "🍛 Must-Try Foods", icon: "🍛", empty: "No must-try food recommendations were generated. Please create a new trip plan." },
+          ];
+          const selectedOption = foodOptions.find((option) => option.id === activeFoodCategory) || foodOptions[0];
+          const selectedItems = foodCategories[selectedOption.id] || [];
+
+          return (
+            <div className="section-content">
+              <div className="section-header-row">
+                <h3 className="section-title">🍴 Food Guide</h3>
+                <span className="section-meta">local picks in {result.destination}</span>
+              </div>
+              <div className="result-tabs" style={{ margin: "0 0 22px", overflowX: "auto" }}>
+                {foodOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    className={`tab-btn ${activeFoodCategory === option.id ? "active" : ""}`}
+                    onClick={() => setActiveFoodCategory(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="cards-grid">
+                {selectedItems.length > 0 ? selectedItems.map((item, i) => (
+                  <div className="info-card food-card" key={`${selectedOption.id}-${i}`}>
+                    <div className="card-icon">{selectedOption.icon}</div>
+                    <h4>{item.name}</h4>
+                    {item.desc && <p>{item.desc}</p>}
+                  </div>
+                )) : <div className="raw-text">{selectedOption.empty}</div>}
+              </div>
             </div>
-            <div className="cards-grid">
-              {foods.length > 0 ? foods.map((f, i) => (
-                <div className="info-card food-card" key={i}>
-                  <div className="card-icon">🍛</div>
-                  <h4>{f.name}</h4>
-                  {f.desc && <p>{f.desc}</p>}
-                </div>
-              )) : <div className="raw-text">{foodText}</div>}
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* PLACES */}
         {activeTab === "places" && (
@@ -462,7 +480,7 @@ function ResultCard({ result }) {
           ["📅 Day-wise Itinerary", itineraryText],
           ["🏆 Trip Score", scoreText],
           ["🏨 Hotels", hotelsText],
-          ["🍛 Food", foodText],
+          ["🍴 Food Guide", foodGuideText],
           ["📸 Places", placesText],
           ["💰 Budget", budgetText],
           ["🎒 Packing List", packingText],
