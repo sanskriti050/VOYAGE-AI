@@ -63,10 +63,10 @@ function RouteOptimizer({
 
   // Format cost — INR for domestic, foreign currency for international
   const fmtCost = (inrAmt) => {
+    const rupeeSym = "\u20b9"; // ₹
     if (!isInternational) {
-      return `₹${inrAmt?.toLocaleString("en-IN")}`;
+      return `${rupeeSym}${inrAmt?.toLocaleString("en-IN")}`;
     }
-    // Convert back roughly if international
     return `~${currencySymbol}${Math.round(inrAmt / 83)}`;
   };
 

@@ -49,16 +49,16 @@ function BudgetOptimizer({ data }) {
   const health = HEALTH_CONFIG[budget_health_label] || HEALTH_CONFIG["Tight"];
   const categories = Object.keys(allocation);
   const maxAmt = Math.max(...Object.values(allocation));
-  const isRupee = sym === "₹" || sym === "Rs" || sym === "INR";
+  const isRupee = sym === "\u20b9" || sym === "Rs" || sym === "INR" || sym === "&#8377;";
 
-  // Smart formatter — ₹ uses Indian number system, others use standard
+  // Smart formatter
   const fmt = (n) => {
+    const rupeeSym = "\u20b9"; // ₹
     if (isRupee) {
-      if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
-      if (n >= 1000)   return `₹${(n / 1000).toFixed(1)}K`;
-      return `₹${Math.round(n).toLocaleString("en-IN")}`;
+      if (n >= 100000) return `${rupeeSym}${(n / 100000).toFixed(1)}L`;
+      if (n >= 1000)   return `${rupeeSym}${(n / 1000).toFixed(1)}K`;
+      return `${rupeeSym}${Math.round(n).toLocaleString("en-IN")}`;
     }
-    // Foreign currency
     if (n >= 1000) return `${sym}${(n / 1000).toFixed(1)}K`;
     return `${sym}${Math.round(n).toLocaleString()}`;
   };

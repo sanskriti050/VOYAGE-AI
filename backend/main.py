@@ -182,8 +182,8 @@ COUNTRY_CURRENCY = {
 }
 
 INDIA_KW = [
-    "india","goa","manali","kashmir","rajasthan","mumbai","delhi","bangalore",
-    "bengaluru","chennai","kolkata","kerala","himachal","uttarakhand","jaipur",
+    "india","goa","manali","kashmir","rajasthan","mumbai","bombay","delhi","bangalore",
+    "bengaluru","chennai","madras","kolkata","calcutta","kerala","himachal","uttarakhand","jaipur",
     "agra","varanasi","ladakh","sikkim","meghalaya","assam","ooty","coorg",
     "munnar","shimla","mussoorie","rishikesh","haridwar","amritsar","pune",
     "hyderabad","ahmedabad","leh","spiti","andaman","lakshadweep","darjeeling",

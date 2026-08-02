@@ -176,7 +176,11 @@ function ResultCard({ result }) {
   if (!result) return null;
 
   const plan = result.ai_plan || "";
-  const sym  = result.currency_symbol || "₹";
+  // Normalize currency symbol — ensure ₹ always renders correctly
+  const rawSym = result.currency_symbol || "\u20b9";
+  const sym = (rawSym === "Rs" || rawSym === "INR" || rawSym === "\u20b9" || rawSym.includes("\u20b9"))
+    ? "\u20b9"
+    : rawSym;
 
   const assessmentText  = extractSection(plan, "BUDGET ASSESSMENT");
   const scoreText       = extractSection(plan, "TRIP SCORE");
