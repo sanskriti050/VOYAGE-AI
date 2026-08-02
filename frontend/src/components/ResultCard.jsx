@@ -1,4 +1,7 @@
 import { useState, useRef } from "react";
+import BudgetOptimizer from "./BudgetOptimizer";
+import RouteOptimizer from "./RouteOptimizer";
+import RecommendationEngine from "./RecommendationEngine";
 
 /* ─── helpers ──────────────────────────────────────────── */
 
@@ -204,15 +207,18 @@ function ResultCard({ result }) {
   };
 
   const tabs = [
-    { id: "itinerary", label: "📅 Itinerary"  },
-    { id: "score",     label: "🏆 Score"      },
-    { id: "hotels",    label: "🏨 Hotels"     },
-    { id: "food",      label: "🍛 Food"       },
-    { id: "places",    label: "📸 Places"     },
-    { id: "budget",    label: "💰 Budget"     },
-    { id: "packing",   label: "🎒 Packing"    },
-    { id: "emergency", label: "🆘 Emergency"  },
-    { id: "tips",      label: "💡 Tips"       },
+    { id: "itinerary",    label: "📅 Itinerary"    },
+    { id: "score",        label: "🏆 Score"        },
+    { id: "hotels",       label: "🏨 Hotels"       },
+    { id: "food",         label: "🍛 Food"         },
+    { id: "places",       label: "📸 Places"       },
+    { id: "budget",       label: "💰 Budget"       },
+    { id: "budget_opt",   label: "📊 Optimizer"   },
+    { id: "route",        label: "🗺️ Route"       },
+    { id: "recommend",    label: "✨ Similar"      },
+    { id: "packing",      label: "🎒 Packing"     },
+    { id: "emergency",    label: "🆘 Emergency"   },
+    { id: "tips",         label: "💡 Tips"         },
   ];
 
   const toggleCheck = (key) => setCheckedItems((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -454,6 +460,62 @@ function ResultCard({ result }) {
             <div className="emergency-note">
               ⚠️ Save these numbers offline before you travel. Keep a printed copy in your bag.
             </div>
+          </div>
+        )}
+
+        {/* BUDGET OPTIMIZER */}
+        {activeTab === "budget_opt" && (
+          <div className="section-content">
+            <div className="section-header-row">
+              <h3 className="section-title">📊 Budget Optimizer</h3>
+              <span className="section-meta">smart allocation · {result.members} people · {result.days} days</span>
+            </div>
+            {result.budget_optimization ? (
+              <BudgetOptimizer
+                data={{
+                  ...result.budget_optimization,
+                  currency_symbol: sym,            // always use trip's actual symbol
+                }}
+              />
+            ) : (
+              <div className="raw-text">Budget optimization data not available. Please re-generate your trip plan.</div>
+            )}
+          </div>
+        )}
+
+        {/* ROUTE OPTIMIZER */}
+        {activeTab === "route" && (
+          <div className="section-content">
+            <div className="section-header-row">
+              <h3 className="section-title">🗺️ Route Optimizer</h3>
+              <span className="section-meta">multi-city · optimal order</span>
+            </div>
+            <RouteOptimizer
+              defaultStart={result.source_city}
+              defaultDestination={result.destination}
+              defaultMode={result.travel_mode}
+              isInternational={result.is_international}
+              currencySymbol={sym}
+            />
+          </div>
+        )}
+
+        {/* RECOMMENDATIONS */}
+        {activeTab === "recommend" && (
+          <div className="section-content">
+            <div className="section-header-row">
+              <h3 className="section-title">✨ Similar Destinations</h3>
+              <span className="section-meta">personalised for {result.trip_type} trips</span>
+            </div>
+            {result.recommendations && result.recommendations.length > 0 ? (
+              <RecommendationEngine
+                recommendations={result.recommendations}
+                tripType={result.trip_type}
+                basedOn={{ destination: result.destination }}
+              />
+            ) : (
+              <div className="raw-text">No recommendations available. Please re-generate your trip plan.</div>
+            )}
           </div>
         )}
 

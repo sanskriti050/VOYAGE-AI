@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import "./TripPlanner.css";
 import ResultCard from "./ResultCard";
+import SemanticSearch from "./SemanticSearch";
 import { generateTrip } from "../services/api";
 
 /* ── Travel facts ── */
@@ -195,7 +196,7 @@ function getAvailableModes(source, destination) {
 }
 
 /* ── Main Component ── */
-function TripPlanner() {
+function TripPlanner({ onTripGenerated }) {
   const [trip, setTrip] = useState({
     source_city: "",
     destination: "",
@@ -226,6 +227,7 @@ function TripPlanner() {
 
   const handleChange = (e) => setTrip({ ...trip, [e.target.name]: e.target.value });
   const loadRecent   = (t) => setTrip({ ...t, days: String(t.days), members: String(t.members), budget: String(t.budget) });
+  const handleSemanticSelect = (destination) => setTrip((prev) => ({ ...prev, destination }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -249,6 +251,8 @@ function TripPlanner() {
       const data = await generateTrip(payload);
       setResult(data);
       saveToRecent(payload);
+      // Pass trip context to chatbot
+      if (onTripGenerated) onTripGenerated(data);
       setTimeout(() => document.getElementById("trip-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
     } catch (err) {
@@ -292,6 +296,9 @@ function TripPlanner() {
         <p className="subtitle">Fill in your details and get a complete personalised trip plan instantly</p>
 
         <RecentTrips onLoad={loadRecent} />
+
+        {/* Semantic Search */}
+        <SemanticSearch onSelect={handleSemanticSelect} />
 
         <form onSubmit={handleSubmit}>
 
