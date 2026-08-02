@@ -1,0 +1,28 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" fill="#DDE9D5"/>
+  <circle cx="920" cy="175" r="95" fill="#F4D69B"/>
+  <path d="M0 490C180 390 338 420 490 510C661 610 824 529 1200 366V900H0V490Z" fill="#8EAD91"/>
+  <path d="M0 598C250 505 445 660 622 697C799 734 1011 631 1200 560V900H0V598Z" fill="#719986"/>
+  <path d="M0 716C237 648 379 748 595 770C819 792 997 685 1200 641V900H0V716Z" fill="#B9D5C6"/>
+  <path d="M0 790C253 735 432 820 678 827C891 834 1089 760 1200 737V900H0V790Z" fill="#8EB8B2"/>
+  <g transform="translate(105 94) rotate(-8 270 330)">
+    <rect width="478" height="595" rx="16" fill="#FAF7EE"/>
+    <rect x="23" y="23" width="432" height="390" rx="5" fill="#477D80"/>
+    <path d="M23 302C108 212 188 240 264 313C339 384 376 301 455 205V413H23V302Z" fill="#4F765B"/>
+    <path d="M23 364C124 304 207 351 276 402C347 452 395 370 455 331V413H23V364Z" fill="#E9D5A1"/>
+    <circle cx="366" cy="110" r="44" fill="#F7D27E"/>
+    <text x="38" y="477" fill="#67452D" font-family="Georgia, serif" font-size="45" font-weight="bold">Wander slowly</text>
+    <text x="40" y="519" fill="#76695B" font-family="Arial, sans-serif" font-size="19" letter-spacing="3">THE BEAUTY IS IN THE WAY</text>
+  </g>
+  <g transform="translate(735 440) rotate(10 165 175)">
+    <rect width="330" height="350" rx="15" fill="#6D482F"/>
+    <path d="M22 102H308V238H22V102Z" fill="#EED6A9"/>
+    <path d="M22 176C80 126 133 152 184 202C240 258 274 184 308 147V238H22V176Z" fill="#9CBFAD"/>
+    <circle cx="250" cy="132" r="24" fill="#F4C96E"/>
+    <text x="25" y="55" fill="#F9F3E7" font-family="Arial, sans-serif" font-size="16" font-weight="bold" letter-spacing="4">VOYAGE NOTES</text>
+    <text x="26" y="286" fill="#F9F3E7" font-family="Georgia, serif" font-size="29">A little escape</text>
+    <text x="26" y="318" fill="#DEC8A4" font-family="Arial, sans-serif" font-size="15">made just for you</text>
+  </g>
+  <path d="M900 95L1117 164L965 196L928 284L889 205L756 180L871 147L900 95Z" fill="#F8F2E5" opacity=".9"/>
+  <path d="M910 128L970 165L914 174L892 215L883 178L828 168L879 154L910 128Z" fill="#6D482F"/>
+</svg>
