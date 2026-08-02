@@ -559,8 +559,8 @@ IMPORTANT: Give real, currently known recommendations located in or very close t
 # ── AI Travel Assistant Chat ──────────────────────────────────────
 @app.post("/chat")
 def travel_chat(req: ChatRequest):
-    if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not set")
+    if not api_key and not groq_api_key:
+        raise HTTPException(status_code=500, detail="No AI API key configured")
 
     trip_ctx = ""
     if req.trip_context:

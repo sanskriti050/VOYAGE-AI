@@ -1,6 +1,6 @@
 # 🌍 VoyageAI — AI-Powered Travel Planner
 
-VoyageAI is a full-stack AI travel planner that generates complete personalised trip plans using Google Gemini AI. Enter your source city, destination, budget, and trip type — get a full day-wise itinerary, hotel picks, food guide, budget breakdown, packing list, and emergency contacts instantly.
+VoyageAI is a full-stack AI travel planner that generates complete personalised trip plans using Groq (LLaMA) and Google Gemini AI. Enter your source city, destination, budget, and trip type — get a full day-wise itinerary, hotel picks, food guide, budget breakdown, packing list, and emergency contacts instantly.
 
 Live Demo: [voyage-ai-2.onrender.com](https://voyage-ai-2.onrender.com)
 
@@ -23,12 +23,18 @@ Live Demo: [voyage-ai-2.onrender.com](https://voyage-ai-2.onrender.com)
 - 🕒 **Recent Trips** — Last 5 plans saved locally
 
 ### 🤖 AI-Powered Smart Features
-- 🔍 **Semantic Destination Search** — Natural language search ("romantic beach honeymoon", "budget friends adventure") using BM25-style embeddings
-- 📊 **Budget Optimizer** — Smart budget allocation by category (travel/hotels/food/transport/activities) with health score, per-person breakdown, and saving tips
-- 🗺️ **Route Optimizer** — Multi-city route planner using nearest-neighbor + 2-opt algorithm to minimize travel distance
-- ✨ **Personalized Recommendations** — Similar destination suggestions based on trip type, budget, and semantic similarity
-- 🧠 **RAG (Retrieval-Augmented Generation)** — In-memory knowledge base of 25+ destinations augments Gemini prompts for more accurate trip plans
-- 💬 **AI Travel Assistant Chatbot** — Context-aware floating chatbot for real-time travel help ("Where should I eat?", "Find ATM", "It started raining")
+
+- 🔍 **Semantic Destination Search** — Natural language search using TF-IDF vectorization with cosine similarity over a curated travel knowledge base. Understands mood, weather, and season queries like "rainy misty peaceful", "cold snowy romantic", "sunny beach party"
+
+- 📊 **Budget Optimizer** — Smart budget allocation by category (travel / hotels / food / transport / activities) with health score (0–100), per-person breakdown, and saving tips — personalised by trip type
+
+- 🗺️ **Route Optimizer** — Multi-city route planner using Nearest Neighbor + 2-opt local search to minimize total travel distance. Detects international routes and restricts impossible modes (no bike/train for Delhi→London)
+
+- ✨ **Personalized Recommendations** — Similar destination suggestions scored on trip-type affinity, budget match, and semantic similarity
+
+- 🧠 **Grounded AI Generation** — Trip plans are grounded using semantic retrieval over a curated travel knowledge base (TF-IDF vectorization + cosine similarity). Relevant destination facts — best season, budget level, key highlights — are injected into the AI prompt to reduce hallucination and improve accuracy
+
+- 💬 **AI Travel Assistant Chatbot** — Context-aware floating chatbot powered by Groq (LLaMA 3.3 70B). Answers real-time questions: "Where should I eat?", "Find ATM", "It started raining", "Shift today's plan"
 
 ---
 
@@ -38,11 +44,12 @@ Live Demo: [voyage-ai-2.onrender.com](https://voyage-ai-2.onrender.com)
 |-------|-----------|
 | Frontend | React 19 + Vite 8 |
 | Backend | FastAPI (Python) |
-| AI | Google Gemini API (`gemini-2.5-flash-lite`) |
-| Search | BM25-style TF-IDF cosine similarity (no external vector DB) |
-| Route Optimization | Nearest-neighbor TSP + 2-opt improvement |
+| Primary AI | Groq API — LLaMA 3.3 70B (fast, generous free tier) |
+| Fallback AI | Google Gemini API (`gemini-2.5-flash`) |
+| Semantic Search | TF-IDF vectorization + cosine similarity (no external vector DB) |
+| Route Optimization | Nearest Neighbor TSP + 2-opt local search (Haversine distances) |
 | Styling | Pure CSS |
-| Deployment | Render (backend) + Vercel (frontend) |
+| Deployment | Render (backend) + GitHub Pages (frontend) |
 
 ---
 
@@ -68,11 +75,14 @@ Create `.env` file:
 cp .env.example .env
 ```
 
-Add your Gemini API key in `backend/.env`:
+Add your API keys in `backend/.env`:
 ```
-GEMINI_API_KEY=your_key_here
+GROQ_API_KEY=your_groq_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
-Get a free key at: https://aistudio.google.com/apikey
+
+- Groq free key: https://console.groq.com/keys
+- Gemini free key: https://aistudio.google.com/apikey
 
 Start the backend:
 ```bash
@@ -98,14 +108,14 @@ http://localhost:5173
 ```
 VoyageAI/
 ├── backend/
-│   ├── main.py                   # FastAPI server — all endpoints + Gemini integration
-│   ├── rag_knowledge.py          # RAG knowledge base with BM25 semantic search
+│   ├── main.py                   # FastAPI server — all endpoints + AI integration
+│   ├── rag_knowledge.py          # Curated travel knowledge base with TF-IDF semantic search
 │   ├── budget_optimizer.py       # Smart budget allocation engine
-│   ├── route_optimizer.py        # Multi-city route optimizer (TSP + 2-opt)
+│   ├── route_optimizer.py        # Multi-city route optimizer (Nearest Neighbor + 2-opt)
 │   ├── recommendation_engine.py  # Personalized destination recommendations
 │   ├── requirements.txt
 │   ├── render.yaml               # Render deployment config
-│   ├── .env                      # Your API key (not committed)
+│   ├── .env                      # Your API keys (not committed)
 │   └── .env.example
 ├── frontend/
 │   ├── src/
@@ -136,12 +146,12 @@ VoyageAI/
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/` | Health check |
-| POST | `/generate-trip` | Generate full AI trip plan |
-| POST | `/search-destinations` | Semantic destination search |
-| POST | `/optimize-budget` | Smart budget allocation |
-| POST | `/optimize-route` | Multi-city route optimization |
+| POST | `/generate-trip` | Generate full AI trip plan (Groq + Gemini fallback) |
+| POST | `/search-destinations` | Semantic destination search (TF-IDF + cosine similarity) |
+| POST | `/optimize-budget` | Smart budget allocation by trip type |
+| POST | `/optimize-route` | Multi-city route optimization (Nearest Neighbor + 2-opt) |
 | POST | `/recommendations` | Personalized destination suggestions |
-| POST | `/chat` | AI travel assistant chat |
+| POST | `/chat` | AI travel assistant (Groq LLaMA 3.3 70B) |
 
 ---
 
@@ -149,7 +159,8 @@ VoyageAI/
 
 **Backend (`backend/.env`):**
 ```
-GEMINI_API_KEY=your_gemini_api_key
+GROQ_API_KEY=your_groq_api_key       # Primary AI — LLaMA 3.3 70B
+GEMINI_API_KEY=your_gemini_api_key   # Fallback AI
 ```
 
 **Frontend (for production deployment):**
@@ -161,11 +172,12 @@ VITE_API_URL=https://your-render-backend-url.onrender.com
 
 ## ⚠️ Important Notes
 
-- Never commit your `.env` file — it contains your secret API key
+- Never commit your `.env` file — it contains your secret API keys
 - The `.gitignore` already excludes it
-- Get a free Gemini API key at https://aistudio.google.com/apikey
-- All new backend modules use Python standard library only — no extra pip installs needed
+- Groq free tier: https://console.groq.com/keys — very generous, rarely hits quota
+- Gemini free key: https://aistudio.google.com/apikey — used as fallback
+- All backend modules use Python standard library only — no extra vector DB needed
 
 ---
 
-Built with ❤️ using React, FastAPI and Google Gemini AI
+Built with ❤️ using React, FastAPI, Groq (LLaMA) and Google Gemini AI

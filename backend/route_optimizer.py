@@ -11,8 +11,10 @@ from typing import List, Dict, Optional, Tuple
 CITY_COORDS = {
     # India
     "delhi": (28.6139, 77.2090), "mumbai": (19.0760, 72.8777),
+    "bombay": (19.0760, 72.8777),  # alias
     "bangalore": (12.9716, 77.5946), "bengaluru": (12.9716, 77.5946),
-    "chennai": (13.0827, 80.2707), "kolkata": (22.5726, 88.3639),
+    "chennai": (13.0827, 80.2707), "madras": (13.0827, 80.2707),
+    "kolkata": (22.5726, 88.3639), "calcutta": (22.5726, 88.3639),
     "hyderabad": (17.3850, 78.4867), "pune": (18.5204, 73.8567),
     "jaipur": (26.9124, 75.7873), "ahmedabad": (23.0225, 72.5714),
     "goa": (15.2993, 74.1240), "panaji": (15.4989, 73.8278),
@@ -21,6 +23,7 @@ CITY_COORDS = {
     "dharamshala": (32.2190, 76.3234), "mussoorie": (30.4590, 78.0667),
     "rishikesh": (30.0869, 78.2676), "haridwar": (29.9457, 78.1642),
     "agra": (27.1767, 78.0081), "varanasi": (25.3176, 82.9739),
+    "benares": (25.3176, 82.9739),  # alias for varanasi
     "lucknow": (26.8467, 80.9462), "chandigarh": (30.7333, 76.7794),
     "amritsar": (31.6340, 74.8723), "srinagar": (34.0837, 74.7973),
     "leh": (34.1526, 77.5771), "ladakh": (34.1526, 77.5771),
@@ -152,7 +155,7 @@ def _two_opt(order: List[int], resolved: List[Dict]) -> List[int]:
 
 # ── India city keys for international route detection ─────────────
 INDIA_CITY_KEYS = {
-    "delhi", "mumbai", "bangalore", "bengaluru", "chennai", "kolkata",
+    "delhi", "mumbai", "bombay", "bangalore", "bengaluru", "chennai", "madras", "kolkata", "calcutta",
     "hyderabad", "pune", "jaipur", "ahmedabad", "goa", "panaji",
     "kochi", "trivandrum", "manali", "shimla", "dharamshala", "mussoorie",
     "rishikesh", "haridwar", "agra", "varanasi", "lucknow", "chandigarh",
