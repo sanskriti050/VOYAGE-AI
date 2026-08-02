@@ -1,14 +1,20 @@
 import os
+from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from google import genai
 from dotenv import load_dotenv
 
+from rag_knowledge import get_knowledge_base
+from budget_optimizer import optimize_budget
+from route_optimizer import optimize_route
+from recommendation_engine import generate_recommendations
+
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
-app = FastAPI()
+app = FastAPI(title="VoyageAI Backend", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,6 +33,48 @@ class TripRequest(BaseModel):
     travel_mode: str
     budget: float
     trip_type: str = "Friends"
+
+
+class SearchRequest(BaseModel):
+    query: str
+    top_k: int = 5
+
+
+class BudgetOptimizeRequest(BaseModel):
+    total_budget: float
+    days: int
+    members: int
+    trip_type: str = "Friends"
+    is_international: bool = False
+    currency_symbol: str = "₹"
+
+
+class RouteOptimizeRequest(BaseModel):
+    cities: List[str]
+    travel_mode: str = "Flight"
+    start_city: str = ""
+
+
+class RecommendRequest(BaseModel):
+    destination: str
+    trip_type: str = "Friends"
+    days: int = 5
+    members: int = 2
+    budget: float = 20000
+    is_international: bool = False
+    exchange_rate: float = 1.0
+    past_destinations: Optional[List[str]] = None
+
+
+class ChatMessage(BaseModel):
+    role: str          # "user" or "assistant"
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str
+    history: List[ChatMessage] = []
+    # Optional trip context — if user already planned a trip
+    trip_context: Optional[dict] = None
 
 
 # ── Exchange rates to INR ─────────────────────────────────────────
@@ -180,10 +228,159 @@ def trip_type_context(trip_type: str) -> str:
 
 @app.get("/")
 def home():
-    return {"message": "VoyageAI AI Engine Running 🚀"}
+    return {"message": "VoyageAI AI Engine Running 🚀 v2.0 — RAG + Smart Features Active"}
 @app.get("/test")
 def test():
     return {"status": "working"}
+
+
+# ── NEW: Semantic Destination Search ─────────────────────────────
+@app.post("/search-destinations")
+def search_destinations(req: SearchRequest):
+    """
+    Semantic search for destinations using embeddings (TF-IDF cosine similarity).
+    Returns top matching destinations with similarity scores.
+    """
+    kb = get_knowledge_base()
+    results = kb.semantic_search(req.query, top_k=req.top_k)
+    return {
+        "query": req.query,
+        "results": results,
+        "total": len(results),
+    }
+
+
+# ── NEW: Budget Optimization ──────────────────────────────────────
+@app.post("/optimize-budget")
+def optimize_budget_endpoint(req: BudgetOptimizeRequest):
+    """
+    Returns smart budget allocation with per-category breakdown,
+    health score, and saving suggestions.
+    """
+    result = optimize_budget(
+        total_budget=req.total_budget,
+        days=req.days,
+        members=req.members,
+        trip_type=req.trip_type,
+        is_international=req.is_international,
+        currency_symbol=req.currency_symbol,
+    )
+    return result
+
+
+# ── NEW: Route Optimization ───────────────────────────────────────
+@app.post("/optimize-route")
+def optimize_route_endpoint(req: RouteOptimizeRequest):
+    """
+    Optimizes visiting order for multi-city trip using nearest-neighbor heuristic.
+    Returns optimized route with distance/cost/time estimates per leg.
+    """
+    result = optimize_route(
+        cities=req.cities,
+        travel_mode=req.travel_mode,
+        start_city=req.start_city,
+    )
+    return result
+
+
+# ── NEW: Personalized Recommendations ────────────────────────────
+@app.post("/recommendations")
+def get_recommendations(req: RecommendRequest):
+    """
+    Returns personalized destination recommendations based on
+    trip type, budget, and similarity to current destination.
+    """
+    recs = generate_recommendations(
+        destination=req.destination,
+        trip_type=req.trip_type,
+        days=req.days,
+        members=req.members,
+        budget=req.budget,
+        is_international=req.is_international,
+        exchange_rate=req.exchange_rate,
+        past_destinations=req.past_destinations,
+    )
+    return recs
+
+
+# ── AI Travel Assistant Chat ──────────────────────────────────────
+@app.post("/chat")
+def travel_chat(req: ChatRequest):
+    """
+    Context-aware AI travel assistant.
+    Answers questions about food, weather, ATMs, itinerary changes,
+    local tips, etc. — with full trip context when available.
+    """
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not set")
+
+    # Build trip context block for the system prompt
+    trip_ctx = ""
+    if req.trip_context:
+        tc = req.trip_context
+        trip_ctx = f"""
+CURRENT TRIP PLAN CONTEXT:
+- From: {tc.get('source_city', 'N/A')}
+- To: {tc.get('destination', 'N/A')}
+- Duration: {tc.get('days', 'N/A')} days
+- Members: {tc.get('members', 'N/A')} people
+- Trip Type: {tc.get('trip_type', 'N/A')}
+- Travel Mode: {tc.get('travel_mode', 'N/A')}
+- Budget: {tc.get('currency_symbol', '₹')}{tc.get('budget', 'N/A')}
+- Is International: {tc.get('is_international', False)}
+"""
+
+    system_prompt = f"""You are VoyageAI's friendly and knowledgeable AI Travel Assistant. 
+You help travellers with real-time questions during trip planning and while travelling.
+
+{trip_ctx}
+
+You can help with:
+- Food recommendations ("Where should I eat now?", "Best local dish here?")
+- Weather advice ("What to wear?", "It started raining, what now?")
+- Nearby facilities ("Find ATM near me", "Nearest pharmacy?")
+- Itinerary changes ("Shift today's plan", "What if I have extra time?")
+- Local transport ("How to get from A to B?", "Should I take taxi or metro?")
+- Safety & emergency tips
+- Budget advice ("Am I spending too much?")
+- Cultural tips & etiquette
+- Hotel / restaurant alternatives
+
+RULES:
+- Be conversational, warm, and concise
+- Give specific, actionable answers
+- If trip context is available, use it to give personalised answers
+- For real-time data (live weather, exact ATM locations), mention you can give general guidance but recommend local apps like Google Maps, AccuWeather for live data
+- Keep responses under 150 words unless user asks for detail
+- Use emojis sparingly to make responses friendly
+- Always stay on topic of travel assistance"""
+
+    # Build conversation history for multi-turn chat
+    history_text = ""
+    for msg in req.history[-8:]:  # last 8 messages for context
+        role = "User" if msg.role == "user" else "Assistant"
+        history_text += f"\n{role}: {msg.content}"
+
+    full_prompt = f"{system_prompt}\n\nConversation so far:{history_text}\n\nUser: {req.message}\n\nAssistant:"
+
+    client = genai.Client(api_key=api_key)
+    models_to_try = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
+
+    ai_reply = None
+    for model_name in models_to_try:
+        try:
+            response = client.models.generate_content(model=model_name, contents=full_prompt)
+            ai_reply = response.text.strip()
+            break
+        except Exception as e:
+            if any(code in str(e) for code in ["429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "404"]):
+                continue
+            raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
+
+    if ai_reply is None:
+        raise HTTPException(status_code=503, detail="AI service busy, please try again in a moment.")
+
+    return {"reply": ai_reply}
 
 
 @app.post("/generate-trip")
@@ -194,6 +391,10 @@ def generate_trip(data: TripRequest):
     cur_code, sym, rate_to_inr, cur_name = detect_currency(data.destination)
     type_context     = trip_type_context(data.trip_type)
     is_international = (cur_code != "INR")
+
+    # ── RAG: retrieve destination context to augment prompt ──────
+    kb = get_knowledge_base()
+    rag_context = kb.get_destination_context(data.destination)
 
     # Build INR conversion examples for the prompt
     example_amt   = int(data.budget)
@@ -209,6 +410,7 @@ def generate_trip(data: TripRequest):
 
     prompt = f"""
 You are an expert AI Travel Planner with deep global knowledge.
+{f"ADDITIONAL CONTEXT (from knowledge base): {rag_context}" if rag_context else ""}
 
 Trip Details:
 - Travelling From : {data.source_city}
@@ -262,10 +464,25 @@ Use EXACTLY these section headers (no changes):
 - **[Hotel Name]** - {sym}[price/night] - [why good for {data.trip_type}]
 (4-5 hotels)
 
-## MUST-TRY FOOD
+## FOOD GUIDE
 
-- **[Dish/Restaurant]** - [description]
-(5-6 items)
+IMPORTANT: Give real, currently known recommendations located in or very close to {data.destination}. Do not repeat the same venue or dish across categories. Include exactly 4-5 bullet points in EACH category. Every bullet must use this exact format: - **[Name]** - [what it is, area/locality, and why it is recommended]. If a destination has little or no club scene, recommend the best legitimate lounge, live-music venue, or nightlife bar instead and clearly say so.
+
+### CAFES
+- **[Real Cafe Name]** - [specialty, locality, why visit]
+(4-5 real cafes)
+
+### FAMILY RESTAURANTS
+- **[Real Restaurant Name]** - [cuisine, locality, why it suits families]
+(4-5 real family-friendly restaurants)
+
+### CLUBS & NIGHTLIFE
+- **[Real Club / Lounge Name]** - [music/vibe, locality, entry note if useful]
+(4-5 real clubs, lounges, or nightlife venues)
+
+### MUST-TRY FOODS
+- **[Local Dish]** - [what it is and a real well-known place/area to try it]
+(4-5 local foods)
 
 ## PLACES TO VISIT
 
@@ -311,11 +528,9 @@ Use EXACTLY these section headers (no changes):
 - [Visa/documentation if international, else N/A]
 """
 
-    models_to_try = [
-        "gemini-2.5-flash-lite", "gemini-2.5-flash",
-        "gemini-2.0-flash", "gemini-2.0-flash-lite",
-        "gemini-flash-lite-latest", "gemini-flash-latest",
-    ]
+    # Use the fastest low-latency model first. A short fallback list avoids
+    # making the visitor wait through several unavailable-model attempts.
+    models_to_try = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
 
     ai_text = None
     last_error = None
@@ -338,6 +553,27 @@ Use EXACTLY these section headers (no changes):
             detail=f"All Gemini models quota exhausted. Please wait a few minutes. Last error: {last_error}"
         )
 
+    # ── Budget optimization ──────────────────────────────────────
+    budget_opt = optimize_budget(
+        total_budget=data.budget,
+        days=data.days,
+        members=data.members,
+        trip_type=data.trip_type,
+        is_international=is_international,
+        currency_symbol=sym,
+    )
+
+    # ── Personalized recommendations ────────────────────────────
+    recs = generate_recommendations(
+        destination=data.destination,
+        trip_type=data.trip_type,
+        days=data.days,
+        members=data.members,
+        budget=data.budget,
+        is_international=is_international,
+        exchange_rate=rate_to_inr,
+    )
+
     return {
         "source_city":      data.source_city,
         "destination":      data.destination,
@@ -351,4 +587,7 @@ Use EXACTLY these section headers (no changes):
         "exchange_rate":    rate_to_inr,
         "is_international": is_international,
         "ai_plan":          ai_text,
+        "budget_optimization": budget_opt,
+        "recommendations":  recs["recommendations"],
+        "rag_context_used": bool(rag_context),
     }

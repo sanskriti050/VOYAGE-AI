@@ -1,8 +1,5 @@
-// LOCAL DEV  → http://localhost:8000  (run: uvicorn main:app --reload --port 8000)
-// PRODUCTION → https://voyage-ai-2.onrender.com  (deployed Render backend)
-//
-// Change this ONE line to switch between local and prod:
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Backend URL — Render deployed backend
+const API_URL = import.meta.env.VITE_API_URL || "https://voyage-ai-2.onrender.com";
 
 export async function generateTrip(tripData) {
   const response = await fetch(`${API_URL}/generate-trip`, {
