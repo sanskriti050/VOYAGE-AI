@@ -6,13 +6,21 @@ from pydantic import BaseModel
 from google import genai
 from dotenv import load_dotenv
 
+# Groq client (optional — used as primary AI if GROQ_API_KEY is set)
+try:
+    from groq import Groq
+    GROQ_AVAILABLE = True
+except ImportError:
+    GROQ_AVAILABLE = False
+
 from rag_knowledge import get_knowledge_base
 from budget_optimizer import optimize_budget
 from route_optimizer import optimize_route
 from recommendation_engine import generate_recommendations
 
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+api_key      = os.getenv("GEMINI_API_KEY")
+groq_api_key = os.getenv("GROQ_API_KEY")
 
 app = FastAPI(title="VoyageAI Backend", version="2.0.0")
 
@@ -224,6 +232,62 @@ def trip_type_context(trip_type: str) -> str:
         "Honeymoon": "HONEYMOON trip — romantic luxury hotels, candlelight dinners, private beach/mountain experiences, couple spa packages.",
     }
     return ctx.get(trip_type, ctx["Friends"])
+
+
+def call_ai(prompt: str) -> str:
+    """
+    Call AI with Groq as primary (fast, generous free tier),
+    Gemini as fallback.
+    Returns generated text or raises HTTPException.
+    """
+    # ── Try Groq first ────────────────────────────────────────────
+    if GROQ_AVAILABLE and groq_api_key:
+        groq_models = [
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "gemma2-9b-it",
+        ]
+        try:
+            client = Groq(api_key=groq_api_key)
+            for model in groq_models:
+                try:
+                    response = client.chat.completions.create(
+                        model=model,
+                        messages=[{"role": "user", "content": prompt}],
+                        max_tokens=4096,
+                        temperature=0.7,
+                    )
+                    return response.choices[0].message.content
+                except Exception as e:
+                    err = str(e)
+                    if any(c in err for c in ["429", "503", "rate_limit", "quota"]):
+                        continue
+                    raise
+        except Exception:
+            pass  # Fall through to Gemini
+
+    # ── Fallback: Gemini ──────────────────────────────────────────
+    if not api_key:
+        raise HTTPException(status_code=500, detail="No AI API key configured. Set GROQ_API_KEY or GEMINI_API_KEY.")
+
+    gemini_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash", "gemini-2.0-flash-lite"]
+    client = genai.Client(api_key=api_key)
+    last_error = None
+
+    for model_name in gemini_models:
+        try:
+            response = client.models.generate_content(model=model_name, contents=prompt)
+            return response.text
+        except Exception as e:
+            last_error = str(e)
+            if any(c in str(e) for c in ["429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "404"]):
+                continue
+            raise HTTPException(status_code=500, detail=f"AI error: {str(e)}")
+
+    raise HTTPException(
+        status_code=503,
+        detail=f"All AI models quota exhausted. Please wait a few minutes or check your API keys. Last error: {last_error}"
+    )
 
 
 @app.get("/")
@@ -449,30 +513,8 @@ IMPORTANT: Give real, currently known recommendations located in or very close t
 - [Visa/documentation if international, else N/A]
 """
 
-    # Use the fastest low-latency model first. A short fallback list avoids
-    # making the visitor wait through several unavailable-model attempts.
-    models_to_try = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
-
-    ai_text = None
-    last_error = None
-    client = genai.Client(api_key=api_key)
-
-    for model_name in models_to_try:
-        try:
-            response = client.models.generate_content(model=model_name, contents=prompt)
-            ai_text = response.text
-            break
-        except Exception as e:
-            last_error = str(e)
-            if any(code in str(e) for code in ["429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "404"]):
-                continue
-            raise HTTPException(status_code=500, detail=f"Gemini API error: {str(e)}")
-
-    if ai_text is None:
-        raise HTTPException(
-            status_code=500,
-            detail=f"All Gemini models quota exhausted. Please wait a few minutes. Last error: {last_error}"
-        )
+    # Call AI — Groq (primary) with Gemini fallback
+    ai_text = call_ai(prompt)
 
     # ── Budget optimization ──────────────────────────────────────
     budget_opt = optimize_budget(
@@ -548,21 +590,6 @@ Rules:
 
     full_prompt = f"{system_prompt}\n\nConversation:{history_text}\n\nUser: {req.message}\n\nAssistant:"
 
-    client = genai.Client(api_key=api_key)
-    models_to_try = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
-    ai_reply = None
-
-    for model_name in models_to_try:
-        try:
-            response = client.models.generate_content(model=model_name, contents=full_prompt)
-            ai_reply = response.text.strip()
-            break
-        except Exception as e:
-            if any(code in str(e) for code in ["429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "404"]):
-                continue
-            raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
-
-    if ai_reply is None:
-        raise HTTPException(status_code=503, detail="AI service busy, please try again.")
-
-    return {"reply": ai_reply}
+    # Call AI — Groq primary, Gemini fallback
+    ai_reply = call_ai(full_prompt)
+    return {"reply": ai_reply.strip()}
