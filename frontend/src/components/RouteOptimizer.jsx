@@ -70,6 +70,8 @@ function RouteOptimizer({
     return `~${currencySymbol}${Math.round(inrAmt / 83)}`;
   };
 
+  const isIntlRoute = result?.is_international_route === true;
+  const availableModes = isIntlRoute ? ["Flight"] : ["Flight", "Train", "Car", "Bus", "Bike"];
   const MODES = ["Flight", "Train", "Car", "Bus", "Bike"];
   const isOptimal = result && result.distance_saved_km === 0;
   const isSaved   = result && result.distance_saved_km > 0;
@@ -123,16 +125,22 @@ function RouteOptimizer({
         <div className="route-mode-row">
           <label>Travel by:</label>
           <div className="route-mode-pills">
-            {MODES.map((m) => (
-              <button
-                key={m}
-                type="button"
-                className={`route-mode-pill ${mode === m ? "active" : ""}`}
-                onClick={() => setMode(m)}
-              >
-                {MODE_ICONS[m]} {m}
-              </button>
-            ))}
+            {MODES.map((m) => {
+              const disabled = isIntlRoute && m !== "Flight";
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  className={`route-mode-pill ${mode === m ? "active" : ""} ${disabled ? "disabled" : ""}`}
+                  onClick={() => !disabled && setMode(m)}
+                  disabled={disabled}
+                  title={disabled ? "Not available for international routes" : undefined}
+                  aria-disabled={disabled}
+                >
+                  {MODE_ICONS[m]} {m}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -147,6 +155,13 @@ function RouteOptimizer({
 
       {result && !result.error && (
         <div className="route-result">
+
+          {/* ── International Route Warning ── */}
+          {isIntlRoute && (
+            <div className="route-intl-warning">
+              ⚠️ International route detected — only Flight is a feasible travel mode
+            </div>
+          )}
 
           {/* ── Optimal / Saved Banner ── */}
           {isOptimal && (

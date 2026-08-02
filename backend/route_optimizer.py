@@ -150,6 +150,19 @@ def _two_opt(order: List[int], resolved: List[Dict]) -> List[int]:
     return best
 
 
+# ── India city keys for international route detection ─────────────
+INDIA_CITY_KEYS = {
+    "delhi", "mumbai", "bangalore", "bengaluru", "chennai", "kolkata",
+    "hyderabad", "pune", "jaipur", "ahmedabad", "goa", "panaji",
+    "kochi", "trivandrum", "manali", "shimla", "dharamshala", "mussoorie",
+    "rishikesh", "haridwar", "agra", "varanasi", "lucknow", "chandigarh",
+    "amritsar", "srinagar", "leh", "ladakh", "udaipur", "jodhpur",
+    "jaisalmer", "ajmer", "pushkar", "bikaner", "darjeeling", "gangtok",
+    "alleppey", "munnar", "ooty", "coorg", "mysore", "mysuru",
+    "andaman", "port blair", "puri", "bhubaneswar",
+}
+
+
 def optimize_route(
     cities: List[str],
     travel_mode: str = "Flight",
@@ -164,6 +177,7 @@ def optimize_route(
         - optimized_route: reordered for minimum travel
         - total_distance_km, legs, total_estimated_cost_inr
         - distance_saved_km, savings_percentage
+        - is_international_route, available_modes, mode_warning
     """
     if not cities or len(cities) < 2:
         return {"error": "Need at least 2 cities for route optimization"}
@@ -183,6 +197,20 @@ def optimize_route(
             "error": f"Could not find coordinates for: {', '.join(unresolved or cities)}",
             "unresolved": unresolved,
         }
+
+    # ── Detect international route ────────────────────────────────
+    india_cities = {r["city"] for r in resolved if r["city"].lower().strip() in INDIA_CITY_KEYS}
+    intl_cities = {r["city"] for r in resolved if r["city"].lower().strip() not in INDIA_CITY_KEYS}
+
+    if len(india_cities) > 0 and len(intl_cities) > 0:
+        is_international_route = True
+    elif len(intl_cities) > 1:
+        is_international_route = True
+    else:
+        is_international_route = False
+
+    # For international routes, force Flight for cost/time estimates
+    effective_mode = "Flight" if is_international_route else travel_mode
 
     n = len(resolved)
 
@@ -240,7 +268,7 @@ def optimize_route(
         a = resolved[final_order[i]]
         b = resolved[final_order[i + 1]]
         dist = _haversine(*a["coords"], *b["coords"])
-        est = _travel_estimate(dist, travel_mode)
+        est = _travel_estimate(dist, effective_mode)
         legs.append({
             "from": a["city"],
             "to": b["city"],
@@ -271,4 +299,11 @@ def optimize_route(
         "savings_percentage": savings_pct,
         "unresolved_cities": unresolved,
         "travel_mode": travel_mode,
+        "is_international_route": is_international_route,
+        "available_modes": ["Flight"] if is_international_route else ["Flight", "Train", "Car", "Bus", "Bike"],
+        "mode_warning": (
+            "Only flight is available for international routes"
+            if is_international_route and travel_mode.lower() != "flight"
+            else ""
+        ),
     }

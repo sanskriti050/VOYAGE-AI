@@ -303,85 +303,6 @@ def get_recommendations(req: RecommendRequest):
     return recs
 
 
-# ── AI Travel Assistant Chat ──────────────────────────────────────
-@app.post("/chat")
-def travel_chat(req: ChatRequest):
-    """
-    Context-aware AI travel assistant.
-    Answers questions about food, weather, ATMs, itinerary changes,
-    local tips, etc. — with full trip context when available.
-    """
-    if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not set")
-
-    # Build trip context block for the system prompt
-    trip_ctx = ""
-    if req.trip_context:
-        tc = req.trip_context
-        trip_ctx = f"""
-CURRENT TRIP PLAN CONTEXT:
-- From: {tc.get('source_city', 'N/A')}
-- To: {tc.get('destination', 'N/A')}
-- Duration: {tc.get('days', 'N/A')} days
-- Members: {tc.get('members', 'N/A')} people
-- Trip Type: {tc.get('trip_type', 'N/A')}
-- Travel Mode: {tc.get('travel_mode', 'N/A')}
-- Budget: {tc.get('currency_symbol', '₹')}{tc.get('budget', 'N/A')}
-- Is International: {tc.get('is_international', False)}
-"""
-
-    system_prompt = f"""You are VoyageAI's friendly and knowledgeable AI Travel Assistant. 
-You help travellers with real-time questions during trip planning and while travelling.
-
-{trip_ctx}
-
-You can help with:
-- Food recommendations ("Where should I eat now?", "Best local dish here?")
-- Weather advice ("What to wear?", "It started raining, what now?")
-- Nearby facilities ("Find ATM near me", "Nearest pharmacy?")
-- Itinerary changes ("Shift today's plan", "What if I have extra time?")
-- Local transport ("How to get from A to B?", "Should I take taxi or metro?")
-- Safety & emergency tips
-- Budget advice ("Am I spending too much?")
-- Cultural tips & etiquette
-- Hotel / restaurant alternatives
-
-RULES:
-- Be conversational, warm, and concise
-- Give specific, actionable answers
-- If trip context is available, use it to give personalised answers
-- For real-time data (live weather, exact ATM locations), mention you can give general guidance but recommend local apps like Google Maps, AccuWeather for live data
-- Keep responses under 150 words unless user asks for detail
-- Use emojis sparingly to make responses friendly
-- Always stay on topic of travel assistance"""
-
-    # Build conversation history for multi-turn chat
-    history_text = ""
-    for msg in req.history[-8:]:  # last 8 messages for context
-        role = "User" if msg.role == "user" else "Assistant"
-        history_text += f"\n{role}: {msg.content}"
-
-    full_prompt = f"{system_prompt}\n\nConversation so far:{history_text}\n\nUser: {req.message}\n\nAssistant:"
-
-    client = genai.Client(api_key=api_key)
-    models_to_try = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
-
-    ai_reply = None
-    for model_name in models_to_try:
-        try:
-            response = client.models.generate_content(model=model_name, contents=full_prompt)
-            ai_reply = response.text.strip()
-            break
-        except Exception as e:
-            if any(code in str(e) for code in ["429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "404"]):
-                continue
-            raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
-
-    if ai_reply is None:
-        raise HTTPException(status_code=503, detail="AI service busy, please try again in a moment.")
-
-    return {"reply": ai_reply}
-
 
 @app.post("/generate-trip")
 def generate_trip(data: TripRequest):
@@ -591,3 +512,57 @@ IMPORTANT: Give real, currently known recommendations located in or very close t
         "recommendations":  recs["recommendations"],
         "rag_context_used": bool(rag_context),
     }
+
+
+# ── AI Travel Assistant Chat ──────────────────────────────────────
+@app.post("/chat")
+def travel_chat(req: ChatRequest):
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not set")
+
+    trip_ctx = ""
+    if req.trip_context:
+        tc = req.trip_context
+        trip_ctx = f"""
+CURRENT TRIP CONTEXT:
+- From: {tc.get('source_city','N/A')} → To: {tc.get('destination','N/A')}
+- Duration: {tc.get('days','N/A')} days | Members: {tc.get('members','N/A')}
+- Trip Type: {tc.get('trip_type','N/A')} | Mode: {tc.get('travel_mode','N/A')}
+- Budget: {tc.get('currency_symbol','₹')}{tc.get('budget','N/A')}
+"""
+
+    system_prompt = f"""You are VoyageAI's friendly AI Travel Assistant. Help travellers with real-time questions.
+{trip_ctx}
+You help with: food spots, weather advice, nearby ATMs/pharmacies, itinerary changes, local transport, safety tips, budget advice, cultural tips.
+Rules:
+- Be conversational, warm, concise (under 150 words unless asked for detail)
+- Give specific actionable answers using trip context when available
+- For live data (exact ATM locations, live weather) suggest Google Maps / AccuWeather
+- Use emojis sparingly
+- Stay focused on travel assistance"""
+
+    history_text = ""
+    for msg in req.history[-8:]:
+        role = "User" if msg.role == "user" else "Assistant"
+        history_text += f"\n{role}: {msg.content}"
+
+    full_prompt = f"{system_prompt}\n\nConversation:{history_text}\n\nUser: {req.message}\n\nAssistant:"
+
+    client = genai.Client(api_key=api_key)
+    models_to_try = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
+    ai_reply = None
+
+    for model_name in models_to_try:
+        try:
+            response = client.models.generate_content(model=model_name, contents=full_prompt)
+            ai_reply = response.text.strip()
+            break
+        except Exception as e:
+            if any(code in str(e) for code in ["429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "404"]):
+                continue
+            raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
+
+    if ai_reply is None:
+        raise HTTPException(status_code=503, detail="AI service busy, please try again.")
+
+    return {"reply": ai_reply}
