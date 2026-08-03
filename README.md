@@ -170,4 +170,9 @@ VITE_API_URL=https://your-render-backend-url.onrender.com
 
 ---
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> fad0280841d52c35252afad4e88260a1cf319a2c
 Built with ❤️ using React, FastAPI, Groq (LLaMA) and Google Gemini AI
