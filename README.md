@@ -170,14 +170,4 @@ VITE_API_URL=https://your-render-backend-url.onrender.com
 
 ---
 
-## ⚠️ Important Notes
-
-- Never commit your `.env` file — it contains your secret API keys
-- The `.gitignore` already excludes it
-- Groq free tier: https://console.groq.com/keys — very generous, rarely hits quota
-- Gemini free key: https://aistudio.google.com/apikey — used as fallback
-- All backend modules use Python standard library only — no extra vector DB needed
-
----
-
 Built with ❤️ using React, FastAPI, Groq (LLaMA) and Google Gemini AI

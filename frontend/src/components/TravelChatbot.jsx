@@ -99,11 +99,25 @@ function TravelChatbot({ tripContext = null }) {
     ]);
   };
 
-  // Format message text — bold **text**, line breaks
+  // Format message — bold, bullets, line breaks
   const formatMsg = (text) => {
-    return text
-      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\n/g, "<br/>");
+    // Split into lines and process each
+    const lines = text.split("\n");
+    const processed = lines.map((line) => {
+      const trimmed = line.trim();
+      // Bullet line: starts with -, *, •, or number.
+      if (/^[-*•]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)) {
+        const content = trimmed
+          .replace(/^[-*•]\s+/, "")
+          .replace(/^\d+\.\s+/, "")
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        return `<div class="chat-bullet">${content}</div>`;
+      }
+      // Regular line
+      const formatted = trimmed.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      return formatted ? `<span>${formatted}</span>` : "";
+    });
+    return processed.filter(Boolean).join("");
   };
 
   return (

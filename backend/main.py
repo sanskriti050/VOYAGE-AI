@@ -577,19 +577,46 @@ CURRENT TRIP CONTEXT:
 {trip_ctx}
 You help with: food spots, weather advice, nearby ATMs/pharmacies, itinerary changes, local transport, safety tips, budget advice, cultural tips.
 Rules:
-- Be conversational, warm, concise (under 150 words unless asked for detail)
-- Give specific actionable answers using trip context when available
-- For live data (exact ATM locations, live weather) suggest Google Maps / AccuWeather
-- Use emojis sparingly
-- Stay focused on travel assistance"""
+- Always respond in bullet points or short numbered lists — never long paragraphs
+- Each point should be one clear actionable line
+- Use emojis at the start of each bullet to make it visual (🍽️ 🏧 🌧️ 🚕 etc.)
+- Maximum 6-7 bullet points per response
+- If giving a recommendation, format: emoji **Name** — reason
+- Stay focused on travel assistance
+- Be warm and friendly in tone"""
 
-    history_text = ""
+    # Build messages list for Groq (system + history + user)
+    messages = [{"role": "system", "content": system_prompt}]
     for msg in req.history[-8:]:
-        role = "User" if msg.role == "user" else "Assistant"
-        history_text += f"\n{role}: {msg.content}"
+        messages.append({"role": msg.role, "content": msg.content})
+    messages.append({"role": "user", "content": req.message})
 
-    full_prompt = f"{system_prompt}\n\nConversation:{history_text}\n\nUser: {req.message}\n\nAssistant:"
+    # Try Groq with proper system role
+    ai_reply = None
+    if GROQ_AVAILABLE and groq_api_key:
+        groq_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+        try:
+            client = Groq(api_key=groq_api_key)
+            for model in groq_models:
+                try:
+                    resp = client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        max_tokens=512,
+                        temperature=0.7,
+                    )
+                    ai_reply = resp.choices[0].message.content.strip()
+                    break
+                except Exception as e:
+                    if any(c in str(e) for c in ["429", "503", "rate_limit", "quota"]):
+                        continue
+                    raise
+        except Exception:
+            pass
 
-    # Call AI — Groq primary, Gemini fallback
-    ai_reply = call_ai(full_prompt)
+    # Fallback to Gemini if Groq failed
+    if not ai_reply:
+        fallback_prompt = f"{system_prompt}\n\nUser: {req.message}\nRespond in bullet points with emojis only:\nAssistant:"
+        ai_reply = call_ai(fallback_prompt)
+
     return {"reply": ai_reply.strip()}

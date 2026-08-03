@@ -2287,3 +2287,22 @@
   .chatbot-fab-label { display: none; }
   .chatbot-fab { border-radius: 50%; padding: 14px; }
 }
+
+/* Chat bullet points */
+.chat-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 0;
+  line-height: 1.5;
+  font-size: 13.5px;
+}
+.chat-bullet::before {
+  content: "›";
+  color: #557a4a;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.bubble-user .chat-bullet::before { color: rgba(255,255,255,0.7); }
